@@ -1,0 +1,59 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install dependencies",
+      "type": "shell",
+      "command": "npm install",
+      "problemMatcher": []
+    },
+    {
+      "label": "Prisma generate",
+      "type": "shell",
+      "command": "npx prisma generate",
+      "problemMatcher": []
+    },
+    {
+      "label": "Prisma db push",
+      "type": "shell",
+      "command": "npx prisma db push",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run dev server",
+      "type": "shell",
+      "command": "npm run dev",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build production",
+      "type": "shell",
+      "command": "npm run build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Git init + main",
+      "type": "shell",
+      "command": "git init && git branch -M main",
+      "problemMatcher": []
+    },
+    {
+      "label": "Git add + commit",
+      "type": "shell",
+      "command": "git add . && git commit -m \"Deploy Malcolm Infinity OmniAPI v6 manual edition\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "Git set remote",
+      "type": "shell",
+      "command": "git remote remove origin 2>nul || exit 0 && git remote add origin https://github.com/luxthorley/malcolm-infinity-OmniAPI.git",
+      "problemMatcher": []
+    },
+    {
+      "label": "Git push origin main",
+      "type": "shell",
+      "command": "git push -u origin main",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  min-height: 100%;
+  background: #070712;
+}
+
+body {
+  @apply bg-cosmic-grid text-white antialiased;
+}
+
+.glass {
+  @apply border border-white/10 bg-white/5 backdrop-blur-xl shadow-glass;
+}
+
+.neon-border {
+  box-shadow: inset 0 0 0 1px rgba(139, 233, 255, 0.12), 0 0 40px rgba(86, 214, 255, 0.08);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #8be9ff 0%, #56d6ff 40%, #c9b8ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 36px 36px;
+}

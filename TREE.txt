@@ -1,0 +1,99 @@
+malcolm-infinity-OmniAPI-v6-manual-vscode
+├── .github
+│   └── workflows
+│       └── ci.yml
+├── .vscode
+│   ├── extensions.json
+│   ├── launch.json
+│   ├── settings.json
+│   └── tasks.json
+├── app
+│   ├── api
+│   │   ├── auth
+│   │   │   └── logout
+│   │   │       └── route.ts
+│   │   ├── healthz
+│   │   │   └── route.ts
+│   │   ├── hypercosmic
+│   │   │   └── theatre
+│   │   │       └── route.ts
+│   │   ├── infinity
+│   │   │   └── stream
+│   │   │       └── route.ts
+│   │   ├── logs
+│   │   │   └── route.ts
+│   │   ├── modes
+│   │   │   └── status
+│   │   │       └── route.ts
+│   │   ├── omni
+│   │   │   ├── command
+│   │   │   │   └── route.ts
+│   │   │   └── suggest
+│   │   │       └── route.ts
+│   │   ├── optimize
+│   │   │   └── route.ts
+│   │   └── token
+│   │       └── route.ts
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components
+│   ├── ui
+│   │   ├── badge.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── input.tsx
+│   │   └── textarea.tsx
+│   ├── ConsolePanel.tsx
+│   ├── DocsModal.tsx
+│   ├── Hero.tsx
+│   ├── IntegrationPanel.tsx
+│   ├── ModeGrid.tsx
+│   ├── OptimizerPanel.tsx
+│   ├── ParticleField.tsx
+│   ├── PwaRegistrar.tsx
+│   ├── StreamPanels.tsx
+│   ├── SystemStatusBar.tsx
+│   ├── TelemetryCards.tsx
+│   ├── ThemeToggle.tsx
+│   └── TopNav.tsx
+├── docs
+│   ├── DEPLOYMENT.md
+│   ├── GITHUB-DEPLOY.md
+│   ├── GITHUB-DEPLOYMENT.md
+│   ├── MANUAL-INSTALL.md
+│   └── SOURCE-CORE-NOTES.md
+├── hooks
+│   ├── useEventStream.ts
+│   └── useSpeechRecognition.ts
+├── lib
+│   ├── auth.ts
+│   ├── infinity-engine.ts
+│   ├── malcolm-dna.ts
+│   ├── modes.ts
+│   ├── prisma.ts
+│   ├── quota.ts
+│   ├── rate-limit.ts
+│   ├── telemetry.ts
+│   └── utils.ts
+├── prisma
+│   └── schema.prisma
+├── public
+│   ├── icon-192.svg
+│   ├── icon-512.svg
+│   ├── manifest.webmanifest
+│   └── sw.js
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── next-env.d.ts
+├── next.config.ts
+├── package.json
+├── postcss.config.mjs
+├── README.md
+├── render.yaml
+├── SOURCE-DUMP.md
+├── tailwind.config.ts
+├── TREE.txt
+├── tsconfig.json
+└── vercel.json

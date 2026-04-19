@@ -1,0 +1,5 @@
+services:
+  - type: web
+    name: malcolm-omniapi-public-web
+    env: docker
+    dockerfilePath: ./Dockerfile
