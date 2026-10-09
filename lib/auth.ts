@@ -17,6 +17,18 @@ export async function signViewerToken(payload: { userId: string; guestId: string
     .sign(secret());
 }
 
+/** Validate the dedicated server-to-server integration token without logging it. */
+export function verifyInfinityApiToken(suppliedToken: string | null | undefined): boolean {
+  const configuredToken = process.env.MALCOLM_INFINITY_API_TOKEN;
+  if (!configuredToken || !suppliedToken) return false;
+
+  const expected = Buffer.from(configuredToken, "utf8");
+  const supplied = Buffer.from(suppliedToken, "utf8");
+  if (expected.length === 0 || expected.length !== supplied.length) return false;
+
+  return crypto.timingSafeEqual(expected, supplied);
+}
+
 export async function verifyViewerToken(token: string) {
   const { payload } = await jwtVerify(token, secret());
   return payload as {
