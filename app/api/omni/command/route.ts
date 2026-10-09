@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   // A supplied bearer credential must be valid when dedicated-token mode is enabled.
   // Browser sessions without an Authorization header continue to authenticate by cookie.
   // Never fall back to a guest identity after an invalid bearer token.
-  if (bearer && apiTokenConfigured && !isIntegrationToken) {
+  if (bearer && !isIntegrationToken) {
     return unauthorized();
   }
 
