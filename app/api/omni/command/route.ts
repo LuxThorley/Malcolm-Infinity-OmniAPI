@@ -1,4 +1,4 @@
-import { getViewer } from "@/lib/auth";
+import { getViewer, verifyInfinityApiToken } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { generateChunks } from "@/lib/infinity-engine";
 import { prisma } from "@/lib/prisma";
@@ -10,23 +10,69 @@ function estimateTokens(text: string) {
   return Math.max(1, Math.ceil(text.length / 4));
 }
 
+function unauthorized() {
+  return Response.json(
+    { ok: false, error: "unauthorized", message: "A valid Malcolm Infinity API bearer token is required." },
+    { status: 401, headers: { "Cache-Control": "no-store" } }
+  );
+}
+
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for") || "local";
-  const limit = rateLimit(`command:${ip}`, 20, 60_000);
+  const authorization = request.headers.get("authorization");
+  const bearer = authorization?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? null;
+  const apiTokenConfigured = Boolean(process.env.MALCOLM_INFINITY_API_TOKEN);
+  const isIntegrationToken = verifyInfinityApiToken(bearer);
 
+  // If an integration token is configured, reject absent or invalid bearer credentials.
+  // Never fall back to creating a guest identity for a failed bearer-authenticated request.
+  if (apiTokenConfigured && !isIntegrationToken) {
+    return unauthorized();
+  }
+
+  // In strict integration mode, the API token is the service identity. Browser sessions
+  // remain compatible only when no dedicated integration token has been configured.
+  let user: Awaited<ReturnType<typeof getViewer>>["user"];
+  if (isIntegrationToken) {
+    const serviceGuestId = "malcolm_infinity_api_service";
+    user = await prisma.user.upsert({
+      where: { guestId: serviceGuestId },
+      update: { tier: "INTEGRATION" },
+      create: { guestId: serviceGuestId, tier: "INTEGRATION" }
+    });
+  } else {
+    // Legacy browser/session path, retained for deployments not yet configured with
+    // MALCOLM_INFINITY_API_TOKEN.
+    const viewer = await getViewer();
+    user = viewer.user;
+  }
+
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const limit = rateLimit(`command:${ip}:${isIntegrationToken ? "integration" : "session"}`, 20, 60_000);
   if (!limit.ok) {
-    return new Response("Rate limit exceeded.", { status: 429 });
+    return Response.json({ ok: false, error: "rate_limit_exceeded" }, { status: 429, headers: { "Cache-Control": "no-store" } });
   }
 
-  const { user } = await getViewer();
-  const quota = await getQuota(user.id);
-  if (quota.remaining <= 0) {
-    return new Response("Daily public quota exhausted for now. Please try again tomorrow.", { status: 429 });
+  let body: { mode?: unknown; message?: unknown };
+  try {
+    body = await request.json() as { mode?: unknown; message?: unknown };
+  } catch {
+    return Response.json({ ok: false, error: "invalid_json" }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
 
-  const body = (await request.json()) as { mode?: string; message?: string };
-  const mode = (body.mode || "growth").toLowerCase();
-  const message = (body.message || "").slice(0, 4000);
+  const mode = typeof body.mode === "string" ? body.mode.toLowerCase().slice(0, 64) : "growth";
+  const message = typeof body.message === "string" ? body.message.slice(0, 4000) : "";
+  if (!message.trim()) {
+    return Response.json({ ok: false, error: "message_required" }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  }
+
+  // Apply quota to browser sessions. The dedicated API token is governed by the rate limit
+  // and the service's configured credential policy rather than the public guest quota.
+  if (!isIntegrationToken) {
+    const quota = await getQuota(user.id);
+    if (quota.remaining <= 0) {
+      return Response.json({ ok: false, error: "daily_quota_exhausted" }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    }
+  }
 
   const chunks = generateChunks({
     mode,
@@ -34,34 +80,36 @@ export async function POST(request: Request) {
   });
 
   let full = "";
-
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
-      for await (const chunk of chunks) {
-        full += chunk;
-        controller.enqueue(encoder.encode(chunk));
-      }
-      controller.close();
-
-      await prisma.sessionLog.create({
-        data: {
-          userId: user.id,
-          channel: "console",
-          mode,
-          prompt: message,
-          response: full,
-          tokensUsed: estimateTokens(message + full)
+      try {
+        for await (const chunk of chunks) {
+          full += chunk;
+          controller.enqueue(encoder.encode(chunk));
         }
-      });
+        controller.close();
+        await prisma.sessionLog.create({
+          data: {
+            userId: user.id,
+            channel: isIntegrationToken ? "malcolm-infinity-api" : "console",
+            mode,
+            prompt: message,
+            response: full,
+            tokensUsed: estimateTokens(message + full)
+          }
+        });
+      } catch {
+        controller.error(new Error("Command execution failed."));
+      }
     }
   });
 
-  return new Response(stream, {
+  return new Response(request.headers.get("accept")?.includes("text/event-stream") ? stream : stream, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive"
+      "X-Content-Type-Options": "nosniff"
     }
   });
 }
