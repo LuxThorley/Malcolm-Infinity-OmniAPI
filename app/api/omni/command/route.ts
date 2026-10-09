@@ -23,14 +23,13 @@ export async function POST(request: Request) {
   const apiTokenConfigured = Boolean(process.env.MALCOLM_INFINITY_API_TOKEN);
   const isIntegrationToken = verifyInfinityApiToken(bearer);
 
-  // If an integration token is configured, reject absent or invalid bearer credentials.
-  // Never fall back to creating a guest identity for a failed bearer-authenticated request.
-  if (apiTokenConfigured && !isIntegrationToken) {
+  // A supplied bearer credential must be valid when dedicated-token mode is enabled.
+  // Browser sessions without an Authorization header continue to authenticate by cookie.
+  // Never fall back to a guest identity after an invalid bearer token.
+  if (bearer && apiTokenConfigured && !isIntegrationToken) {
     return unauthorized();
   }
 
-  // In strict integration mode, the API token is the service identity. Browser sessions
-  // remain compatible only when no dedicated integration token has been configured.
   let user: Awaited<ReturnType<typeof getViewer>>["user"];
   if (isIntegrationToken) {
     const serviceGuestId = "malcolm_infinity_api_service";
@@ -40,8 +39,8 @@ export async function POST(request: Request) {
       create: { guestId: serviceGuestId, tier: "INTEGRATION" }
     });
   } else {
-    // Legacy browser/session path, retained for deployments not yet configured with
-    // MALCOLM_INFINITY_API_TOKEN.
+    // Cookie-based browser sessions remain supported. If a bearer token was supplied
+    // but the dedicated token is not configured, preserve the existing viewer-JWT path.
     const viewer = await getViewer();
     user = viewer.user;
   }
